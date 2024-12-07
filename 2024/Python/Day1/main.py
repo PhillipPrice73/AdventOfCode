@@ -1,7 +1,15 @@
 def main():
     # load lists
-    list1 = [3, 4, 2, 1, 3, 3]
-    list2 = [4, 3, 5, 3, 9, 3]
+    list1 = []
+    list2 = []
+    with open('SampleData') as f:
+        for line in f:
+            line = line.rstrip()
+            #I don't like this line.
+            #Currently, my only alternative idea is to save data as a csv file and load that.
+            el1, el2 = line.split(sep='   ')
+            list1.append(int(el1))
+            list2.append(int(el2))
 
     # sort lists (wlog in ascending order)
     list1.sort()
