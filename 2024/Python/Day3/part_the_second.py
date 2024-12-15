@@ -13,7 +13,7 @@ def main(input_file):
 
     # input data starts with an implicit do()
     # Taking everything between don't() and do() and replacing with nothing
-    p = re.compile(r"don't\(\).*do\(\)")
+    p = re.compile(r"don't\(\).*?do\(\)")
     active_multiplies = re.sub(p, "", complete_string)
 
     # find all instances of mul(###,###), multiply all values, calculate and return total
