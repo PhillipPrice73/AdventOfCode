@@ -106,6 +106,16 @@ def ExtractRuleOrder(rules_list):
     return rule_order
 
 
+def isValidUpdateOrder(rule_order, update_list):
+    lower_bound = rule_order.index(update_list[0])
+    for i in range(1,len(update_list)):
+        if update_list[i] in rule_order[lower_bound+1:]:
+            lower_bound = rule_order.index(update_list[i])
+        else:
+            return False
+    return True
+
+
 if __name__ == "__main__":
     if DEBUG:
         rules, updates = ExtractRulesAndUpdates("DebugData")
@@ -113,3 +123,5 @@ if __name__ == "__main__":
         rules, updates = ExtractRulesAndUpdates("TestData")
 
     rule_ordering = ExtractRuleOrder(rules)
+    for update in updates:
+        print("{0}".format(isValidUpdateOrder(rule_ordering, update)))
