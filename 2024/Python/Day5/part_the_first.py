@@ -1,4 +1,4 @@
-DEBUG = True
+DEBUG = False
 
 def ExtractRulesAndUpdates(input_file):
     rules_list = []
@@ -18,102 +18,48 @@ def ExtractRulesAndUpdates(input_file):
                 line = line.split(",")
                 updates_list.append([int(item) for item in line])
 
-    #print("{0}".format(rules_list))
-    #print("{0}".format(updates_list))
     return rules_list, updates_list
 
 
-def ExtractRuleOrder(rules_list):
-    rule_order = []
-    rule_order.append(rules_list[0][0])
-    rule_order.append(rules_list[0][1])
-    rules_list.pop(0)
+def CreateCondensedRules(rules_list):
+    previous_entries = {} # key = page number, value = list of all page numbers to appear before key
+    future_entries = {} # key = page number, value = list of all page numbers to appear after key
+    for rule in rules_list:
+        if rule[0] not in future_entries:
+            future_entries[rule[0]] = [rule[1]]
+        else:
+            future_entries[rule[0]].append(rule[1])
+        if rule[1] not in previous_entries:
+            previous_entries[rule[1]] = [rule[0]]
+        else:
+            previous_entries[rule[1]].append(rule[0])
 
-    #generate endpoint of rules list
-    target_to_find = rule_order[-1]
-    target_found = False
-    target_exists = True
-    while target_exists:
-        for item in rules_list:
-            if item[0] == target_to_find:
-                rule_order.append(item[1])
-                target_to_find = item[1]
-                #rules_list.remove(item)
-                target_found = True
+    return previous_entries, future_entries
+
+
+def IsValidUpdateOrder(backwards_looking_rules, forward_looking_rules, update_order):
+    update_is_valid = True
+    for page in update_order:
+        page_index = update_order.index(page)
+        previous_pages = update_order[:page_index]
+        future_pages = update_order[page_index+1:]
+        # Check if previous pages need to appear after current page
+        if page in forward_looking_rules.keys():
+            for p in previous_pages:
+                if p in forward_looking_rules[page]:
+                    update_is_valid = False
+                    break
+            if not update_is_valid:
                 break
-        if target_found:
-            target_found = False
-            continue
-        else:
-            target_exists = False
-
-    #generate starting point of rules list
-    target_to_find = rule_order[0]
-    target_found = False
-    target_exists = True
-    while target_exists:
-        for item in rules_list:
-            if item[1] == target_to_find:
-                rule_order.insert(0, item[0])
-                target_to_find = item[0]
-                #rules_list.remove(item)
-                target_found = True
+        # Check if future pages need to appear before current page
+        if page in backwards_looking_rules.keys():
+            for p in future_pages:
+                if p in backwards_looking_rules[page]:
+                    update_is_valid = False
+                    break
+            if not update_is_valid:
                 break
-        if target_found:
-            target_found = False
-            continue
-        else:
-            target_exists = False
-
-    # putting remaining rules in order
-    rules_to_add = []
-    for item in rules_list:
-        if item[0] not in rule_order and item[0] not in rules_to_add:
-            rules_to_add.append(item[0])
-        if item[1] not in rule_order and item[1] not in rules_to_add:
-            rules_to_add.append(item[1])
-
-    for rule in rules_to_add:
-        for item in rules_list:
-            if rule == item[0]:
-                if rule in rule_order and item[1] in rule_order:
-                    rule_pt1_idx = rule_order.index(rule)
-                    rule_pt2_idx = rule_order.index(item[1])
-                    if rule_pt1_idx < rule_pt2_idx:
-                        continue
-                    else:
-                        rule_order.remove(rule)
-                        rule_order.insert(rule_pt2_idx-1, rule)
-                elif item[1] in rule_order:
-                    rule_idx = rule_order.index(item[1])
-                    rule_order.insert(rule_idx, rule)
-            elif rule == item[1]:
-                if rule in rule_order and item[0] in rule_order:
-                    rule_pt1_idx = rule_order.index(item[0])
-                    rule_pt2_idx = rule_order.index(rule)
-                    if rule_pt1_idx < rule_pt2_idx:
-                        continue
-                    else:
-                        rule_order.remove(rule)
-                        rule_order.insert(rule_pt1_idx, rule)
-                elif item[0] in rule_order:
-                    rule_idx = rule_order.index(item[0])
-                    rule_order.insert(rule_idx+1, rule)
-
-    #print("Rule to add: {0}".format(rules_to_add))
-    #print("Rules list: {0}".format(rules_list))
-    #print("Rule ordering: {0}".format(rule_order))
-    return rule_order
-
-
-def IsValidUpdateOrder(rule_order, update_list):
-    lower_bound = rule_order.index(update_list[0])
-    for i in range(1,len(update_list)):
-        if update_list[i] in rule_order[lower_bound+1:]:
-            lower_bound = rule_order.index(update_list[i])
-        else:
-            return False
-    return True
+    return update_is_valid
 
 
 def ExtractMiddleValue(list):
@@ -126,12 +72,14 @@ if __name__ == "__main__":
         rules, updates = ExtractRulesAndUpdates("DebugData")
     else:
         rules, updates = ExtractRulesAndUpdates("TestData")
+    print("Read file")
 
-    rule_ordering = ExtractRuleOrder(rules)
+    backward_rules, forward_rules = CreateCondensedRules(rules)
+    print("Extracted Rule Ordering")
+
     total = 0
     for update in updates:
-        update_is_valid = IsValidUpdateOrder(rule_ordering, update)
-        if update_is_valid:
+        if IsValidUpdateOrder(backward_rules, forward_rules, update):
             total += ExtractMiddleValue(update)
 
     print("Total: {0}".format(total))
