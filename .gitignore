@@ -1,0 +1,3 @@
+# excluding text files, typically containing either sample data or problem solving notes
+*.txt
+*.dat
