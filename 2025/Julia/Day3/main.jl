@@ -35,46 +35,49 @@ end # IntArrayFromString
     GetLargestJoltage(batteryBank)
 
 input - battery bank as a vector of ints
+numValues - number of batteries we want to grab from the battery bank
 
 output - largest possible joltage producible by the battery bank as a single int
 """
-function GetLargestJoltage(batteryBank)
-	largestValue, idx = GetHighestSingleJoltageBattery(batteryBank)
-	secondValue, _ = GetHighestSingleJoltageBattery(batteryBank[idx+1:end], true)
-	return (largestValue * 10) + secondValue
-end # GetLargestJoltage
+function GetLargestJoltage(batterybank, numValues)
+	idx = 1
+	total = 0
+	for i in range(1, numValues)
+		intermediate = numValues-i
+		batteryBankSubset = batterybank[idx:end-intermediate] # if we're finding the nth of m batteries, it can't be in the last m-n batteries
+		value, newidx = GetHighestSingleJoltageBattery(batteryBankSubset)
+		idx += newidx
+		total += value * (10 ^ intermediate)
+	end # for
+	total
+end
 
 """
     GetHighestSingleJoltageBattery(batteryBank)
 
 input - battery bank as a vector of ints
-secondPass - is this our second look at the battery bank?
-	On the first pass, we need at least one additional battery. On the second pass, we don't care and can use the last battery
 
 output - highest joltage battery and the index of said battery
-	If the highest joltage battery is the last battery in the bank, we need to look again as we ultimately need two batteries
 """
-function GetHighestSingleJoltageBattery(batteryBank, secondPass=false)
+function GetHighestSingleJoltageBattery(batteryBank)
 	for i in range(start=9, step=-1, stop=1)
 		idx = findfirst(isequal(i), batteryBank)
-		if (
-			!(isnothing(idx)) # we found the item
-			&& (idx != length(batteryBank) || secondPass) # if it's the first pass, we can't use the last battery. If it's the second pass, we can
-			)
+		if (!(isnothing(idx)))
 			return i, idx
-		end 
+		end # if
 	end # for
 end # GetHighestSingleJoltageBattery
 
 """
-    Solve(input)
+    Solve(input, numBatteries)
 
 input - path to input file
+numBatteries - The number of batteries we need to get from the battery bank
 
 output - solution to challenge
 """
-function Solve(input)
+function Solve(input, numBatteries)
 	data = ProcessInput(input)
-	data = map(GetLargestJoltage, data)
+	data = map(GetLargestJoltage, data, fill(numBatteries, length(data)))
 	sum(data)
 end # Solve
