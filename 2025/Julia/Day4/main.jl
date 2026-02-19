@@ -51,7 +51,7 @@ function CharVectorFromString(some_string)
 end # CharVectorFromString
 
 
-function TransformData(data_array)
+function IdentifyAccessibleRolls(data_array)
 	numRows = length(data_array)
 	numCols = length(data_array[1])
 	data = deepcopy(data_array)
@@ -61,7 +61,7 @@ function TransformData(data_array)
 		end # for [col]
 	end # for [row]
 	data
-end # TransformData
+end # IdentifyAccessibleRolls
 
 
 """
@@ -117,17 +117,42 @@ function NeighborCheck(data_array, row_idx, col_idx)
 
 end # NeighborCheck
 
-function ReduceData(data_array)
+function CountAccessibleRolls(data_array)
 	accessible_rolls = 0
-	for (i, line) in pairs(data_array)
+	for (_, line) in pairs(data_array)
 		accessible_rolls += count(==('x'), line)
 	end # for
 	accessible_rolls
-end # 
+end # CountAccessibleRolls
+
+function RemoveMovableRolls!(data_array)
+	rolls_moved = 0
+	for (i, line) in pairs(data_array)
+		for (j, _) in pairs(line)
+			if data_array[i][j] == 'x'
+				data_array[i][j] = '.'
+				rolls_moved += 1
+			end # if
+		end # for
+	end # for
+	rolls_moved > 0
+end # RemoveMovableRolls!
 
 function Solve(input)
 	data = ProcessData(input)
-	data = TransformData(data)
-	data = ReduceData(data)
+	data = IdentifyAccessibleRolls(data)
+	data = CountAccessibleRolls(data)
 	data
 end # Solve
+
+function FullSweep(input)
+	data = ProcessData(input)
+	total_rolls_moved = 0
+	rolls_to_move = true
+	while (rolls_to_move)
+		data = IdentifyAccessibleRolls(data)
+		total_rolls_moved += CountAccessibleRolls(data)
+		rolls_to_move =  RemoveMovableRolls!(data)
+	end # while
+	total_rolls_moved
+end # FullSweep
